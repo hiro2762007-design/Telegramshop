@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiro Telegram Channel Shop</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <header class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-5">
+      <h1 class="text-2xl font-bold text-slate-900">🛍️ Telegram Channel Shop</h1>
+      <p class="text-sm text-slate-500 mt-1">Telegram မှ ပစ္စည်းအသစ်များ အလိုအလျောက် ပြသပေးသည်</p>
+    </div>
+  </header>
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-semibold text-slate-800">ပစ္စည်းများ</h2>
+      <button id="refresh" class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700">အသစ်ပြန်ယူရန်</button>
+    </div>
+    <p id="status" class="text-slate-500 text-center py-8">ပစ္စည်းများ ရယူနေသည်...</p>
+    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+  </main>
+<script>
+const grid = document.getElementById('product-grid');
+const statusText = document.getElementById('status');
+
+function makeCard(product) {
+  const card = document.createElement('article');
+  card.className = 'bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100 hover:shadow-md transition';
+
+  if (product.image_url) {
+    const image = document.createElement('img');
+    image.src = product.image_url;
+    image.alt = product.name || 'Product';
+    image.loading = 'lazy';
+    image.className = 'w-full h-52 object-cover bg-slate-100';
+    card.appendChild(image);
+  } else {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'w-full h-52 bg-slate-100 flex items-center justify-center text-slate-400';
+    placeholder.textContent = 'ပုံမရှိပါ';
+    card.appendChild(placeholder);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'p-4';
+  const title = document.createElement('h3');
+  title.className = 'font-bold text-lg text-slate-800 mb-2';
+  title.textContent = product.name || 'ပစ္စည်း';
+  const description = document.createElement('p');
+  description.className = 'text-slate-600 text-sm whitespace-pre-line break-words';
+  description.textContent = product.description || '';
+  body.append(title, description);
+  card.appendChild(body);
+  return card;
+}
+
+async function fetchProducts() {
+  statusText.textContent = 'ပစ္စည်းများ ရယူနေသည်...';
+  grid.replaceChildren();
+  try {
+    const response = await fetch('/api/products', {cache: 'no-store'});
+    if (!response.ok) throw new Error('API response: ' + response.status);
+    const products = await response.json();
+    if (!Array.isArray(products) || products.length === 0) {
+      statusText.textContent = 'ယခုလောလောဆယ် ပစ္စည်း မရှိသေးပါ။';
+      return;
+    }
+    statusText.textContent = '';
+    products.forEach(product => grid.appendChild(makeCard(product)));
+  } catch (error) {
+    console.error(error);
+    statusText.textContent = 'ပစ္စည်းများ ရယူမရပါ။ Server နဲ့ Supabase ချိတ်ဆက်မှုကို စစ်ဆေးပါ။';
+  }
+}
+document.getElementById('refresh').addEventListener('click', fetchProducts);
+fetchProducts();
+// Automatically refresh the storefront every 30 seconds.
+setInterval(fetchProducts, 30000);
+</script>
+</body>
+</html>
